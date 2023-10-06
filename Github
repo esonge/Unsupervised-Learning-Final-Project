@@ -1,0 +1,75 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.cluster import KMeans
+
+train = pd.read_csv('data/train.csv')        # import a data set
+train.info()                                 # visually inspect the data
+
+# inspect the columns and the rows with Null Values in the training dataset to perform Data Cleaning
+
+counts = train.isnull().sum(axis = 0)
+counts = counts[counts > 0]
+null_counts = counts
+bins = np.arange(0, 900, 50)
+histogram = plt.hist(x = null_counts, bins = bins)
+plt.show()                                             # check rows with null values
+
+null_counts                                            # check columns with null values
+
+train = train.drop(columns = ['Name', 'Ticket', 'Cabin'])               # drop columns which have too many missing values
+train['Age'].fillna(train['Age'].mode()[0], inplace = True)             # replace missing values
+train['Embarked'].fillna(train['Embarked'].mode()[0], inplace = True)
+train.info()
+
+train['Sex'].replace({'male':1, 'female':2}, inplace=True)              # convert data type from string to numeric
+train['Embarked'].replace({'S':1, 'C':2, 'Q':3}, inplace=True)
+train.info()
+
+# visualize a correlation matrix to check the correlation between features
+
+plt.figure(figsize=(16,8))
+sns.heatmap(train.corr(), center=0, cmap='BrBG', annot=True)
+
+# inspect relationships between features using a pairplot
+
+cols_to_plot = train.iloc[:,1:]
+sns.pairplot(cols_to_plot, diag_kind='kde')
+
+# check the inertia to determine the number of the clusters
+
+inert = []
+for i in range(1,20):
+    inert.append(KMeans(n_clusters = i, random_state = 0).fit(train).inertia_)
+sns.lineplot(range(1, 20), inert)
+
+# cluster the data set with the number of 5
+
+kmean = KMeans(n_clusters = 5, random_state = 0)                        
+clusters = kmean.fit_predict(train)
+train['clusters'] = clusters
+
+# inspect each clusters with tables and/or plots
+
+train.clusters.value_counts()
+
+sns.countplot(data = train, x = 'clusters', hue = 'Survived')
+
+train[train.Survived == 1].clusters.value_counts()
+
+sns.countplot(data = train, x = 'clusters', hue = 'Pclass')
+
+sns.countplot(data = train, x = 'clusters', hue = 'Sex')
+
+sns.barplot(x = train.clusters, y = train.Age)
+
+sns.barplot(x = train.clusters, y = train.SibSp)
+
+sns.barplot(x = train.clusters, y = train.Parch)
+
+sns.barplot(x = train.clusters, y = train.Fare)
+
+sns.countplot(data = train, x = 'clusters', hue = 'Embarked')
+
+# by clustering samples and inspecting the data, could conclude the characteristics of each group
